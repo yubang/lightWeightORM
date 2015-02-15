@@ -1,0 +1,192 @@
+该文档是lightWeightORM的API文档
+@author:yubang
+
+公有方法：
+    getLightWeightDb()
+        返回一个LightWeightDb对象，多次调用该方法都返回同一个对象
+
+    
+类结构：
+
+LightWeightDb
+方法：
+    def setMaxDbNumber(self,number)
+        设置数据库连接数，建议选择一个合理的数值
+        @param number 数据库连接数
+        
+    def setDbConfig(self,dbInfo)
+        设置数据库配置信息
+        @param dbInfo 一个数据库字典
+            例子dbInfo={
+                        'host':'127.0.0.1',
+                        'port':3306,
+                        'dbName':'test',
+                        'user':'root',
+                        'password':'root',
+                    }
+                    
+    def setDebug(self,sign)
+        显示调试信息，生产环境建议关闭
+        @param sign 是否显示调试信息（True  | False）
+        
+    def getDb(self)
+        获取一个Db对象
+    
+
+Log
+构造方法：
+    def __init__(self,type=0,filePath="sql.log",level=0)
+        @param type 输出媒体 0为不输出 1为控制台输出 2为输出到文件
+        @param filePath 日记输出路径 如type不等于2，则无需设置
+        @param level  日记输出级别（忽略）
+        
+方法： 
+    def log(self,data,level)
+        @param data 日记内容
+        @param level 日记级别
+        
+        
+Db
+构造方法：
+    def __init__(self,dbInfo,dbType="mysql",showSql=True,cacheObj=None,cachePrefix="lightWeight_",cacheTimeout=3600*24)
+        @param dbInfo 数据库信息字典
+        dbInfo={
+            'host':数据库主机,
+            'port':数据库端口,
+            'dbName':数据库,
+            'user':数据库用户名,
+            'password':数据库密码,
+        }
+        @param dbType 数据库类型
+        @param showSql 是否打印sql
+        @param cacheObj 缓存类，建议开发环境提供自己的缓存类，测试环境可以填None
+        @param cachePrefix cache key前缀
+        @param cacheTimeout 缓存时间
+        
+公有方法：
+    def M(self,tableName)
+        @param tableName 数据表名
+        返回一个Table对象
+        
+
+Table
+构造方法：
+    def __init__(self,tableName,con,showSql,cache,log,connectionDb,cacheTimeout=3600*24,cachePrefix="lightWeight_"):
+        @param tableName 数据表名
+        @param con 数据库连接对象
+        @param showSql 是否打印sql
+        @param cache cache类
+        @param log 日记类
+        @param connectionDb 从新连接数据库的函数
+        @param cacheTimeout 数据缓存时间
+        @param cachePrefix 缓存key前缀
+        
+公有方法：
+    def field(self,text)
+        字段约束，声明要查询的字段
+    def where(self,data=None)
+        条件约束，data可以是字符串或者字典（推荐）
+        当data为字典时，值可以是数组(第一个参数（如gt）不区分大小写)
+        如{'test':["gt",5]}的意思是test>5
+        如{'test':["gte",5]}的意思是test>=5
+        如{'test':["lt",5]}的意思是test<5
+        如{'test':["lte",5]}的意思是test<=5
+        如{'test':["eq",5]}的意思是test=5
+        如{'test':["neq",5]}的意思是test!=5
+        如{'test':["between",[4,5]]}的意思是test between 4 and 5
+        如{'test':["in",[1,2,3]]}的意思是test in (1,2,3)
+        如{'test':["not between",[4,5]]}的意思是test not between 4 and 5
+        如{'test':["not in",[1,2,3]]}的意思是test not in (1,2,3)
+        
+    def limit(self,row,offset=None)
+        limit约束，如填写一个值，则等于 limit a
+        如填写两个值，则等于 limit a,b
+        
+    def group_by(self,text)
+        group_by约束，
+        
+    def order_by(self,text)
+        order_by约束，例如text是-a,b 则等价于order by a desc and b asc
+        
+    def select(self)
+        获取一个select查询的字典数组
+        
+    def update(self,data)
+        @param data 一个要修改的字典数据
+        返回影响行数
+        
+    def add(self,data)
+        @param data 一个要添加的字典
+        返回影响行数
+        
+    def delete(self)
+        删除数据
+        返回影响行数
+        
+    def getError(self)
+        获取错误信息，在调用增删改查后使用
+        
+    def query(self,sql)
+        @param sql sql语句
+        返回二维数组
+        
+    def execute(self,sql)
+        @param sql sql语句
+        返回影响行数
+        
+    def begin(self)
+        开启事务，注意调用该方法后，要commit才会保存数据
+        
+    def commit(self)
+        提交事务
+        
+    def rollback(self)
+        事务回滚
+        
+    def getTableColumns(self)
+        获取该table的字段数组
+        
+    def count(self,data=None)
+        @param data 要统计的字符串
+        data字符串格式为a,b,c
+        返回count统计结果
+        
+    def avg(self,data=None)
+        @param data 要统计的字符串
+        data字符串格式为a,b,c
+        返回avg统计结果
+        
+    def max(self,data=None)
+        @param data 要统计的字符串
+        data字符串格式为a,b,c
+        返回max统计结果
+        
+    def min(self,data=None)
+        @param data 要统计的字符串
+        data字符串格式为a,b,c
+        返回min统计结果
+        
+    def getLastSql(self)
+        获取最后执行的sql
+        
+        
+    下面列出使用例子
+    dbInfo={
+        'host':'127.0.0.1',
+        'port':3306,
+        'dbName':'mysql',
+        'user':'root',
+        'password':'root',
+    }
+    #示例1
+    lightWeightDbObj=getLightWeightDb()
+    lightWeightDbObj.setDbConfig(dbInfo)
+    db=lightWeightDbObj.getDb()
+    dao=db.M("db")
+    print dao.select()
+    print dao.getLastSql()
+    
+    #示例2
+    db=Db(dbInfo)
+    dao=db.M("db")
+    print dao.select()
