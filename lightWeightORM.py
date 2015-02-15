@@ -108,12 +108,13 @@ class Db():
     @param cachePrefix cache key前缀
     @param cacheTimeout 缓存时间
     """
-    def __init__(self,dbInfo,dbType="mysql",showSql=True,cacheObj=None,cachePrefix="lightWeight_",cacheTimeout=3600*24):
+    def __init__(self,dbInfo,dbType="mysql",showSql=True,cacheObj=None,cachePrefix="lightWeight_",cacheTimeout=3600*24,charset="utf8"):
         self.dbInfo=dbInfo
         self.showSql=showSql
         self.cache=Cache()
         self.__cacheTimeout=cacheTimeout
         self.__cachePrefix=cachePrefix
+        self.__charset=charset
         if(cacheObj==None):
             if(showSql):
                 self.log=Log(1)
@@ -130,10 +131,10 @@ class Db():
         max_try_number=5
         while(index<max_try_number):
             try:
-                self.__con=MySQLdb.connect(host=self.dbInfo['host'],port=self.dbInfo['port'],user=self.dbInfo['user'],passwd=self.dbInfo['password'],db=self.dbInfo['dbName'])
+                self.__con=MySQLdb.connect(host=self.dbInfo['host'],port=self.dbInfo['port'],user=self.dbInfo['user'],passwd=self.dbInfo['password'],db=self.dbInfo['dbName'],use_unicode=0, charset=self.__charset)
                 self.log.log(u"连接数据库!",0)
                 return True
-            except:
+            except Exception:
                 self.log.log("db connection fail!",0)
             index=index+1
             time.sleep(0.2)
@@ -658,7 +659,7 @@ class LightWeightDb():
     def __init__(self):
         self.__maxDbNumber=5
         self.__dbSelectIndex=0
-        self.__debug=False
+        self.__debug=True
         self.__dbObjs=[]
         self.__initSign=False
         self.__dbType="mysql"
@@ -666,6 +667,7 @@ class LightWeightDb():
         self.__cacheObj=None
         self.__cachePrefix="lightWeight_"
         self.__cacheTimeout=3600*24
+        self.__charset="utf8"
     def setMaxDbNumber(self,number):
         "设置数据库连接数"
         self.__maxDbNumber=number
@@ -676,12 +678,14 @@ class LightWeightDb():
         "初始化数据库"
         index=0
         while(index<self.__maxDbNumber):
-            obj=Db(self.__dbInfo,self.__dbType,self.__debug,self.__cacheObj,self.__cachePrefix,self.__cacheTimeout)
+            obj=Db(self.__dbInfo,self.__dbType,self.__debug,self.__cacheObj,self.__cachePrefix,self.__cacheTimeout,self.__charset)
             self.__dbObjs.append(obj)
             index=index+1
     def setDebug(self,sign):
         "是否打开日记"
         self.__debug=sign
+    def setCharset(self,charset):
+        self.__charset=charset
     """
     获取db对象
     @param dbInfo 一个数据库配置字典
@@ -718,14 +722,15 @@ if __name__ == "__main__":
     #示例1
     lightWeightDbObj=getLightWeightDb()
     lightWeightDbObj.setDbConfig(dbInfo)
-    lightWeightDbObj.setMaxDbNumber(500)
+    lightWeightDbObj.setMaxDbNumber(1)
     db=lightWeightDbObj.getDb()
     dao=db.M("db")
     print dao.select()
     print dao.getLastSql()
-    time.sleep(20)
+    #time.sleep(20)
+    
     #示例2
-    db=Db(dbInfo)
-    dao=db.M("db")
-    print dao.select()
+    #db=Db(dbInfo)
+    #dao=db.M("db")
+    #print dao.select()
     
