@@ -144,7 +144,7 @@ class Db():
     """
     def M(self,tableName):
         "获取一个数据表封装类"
-        return Table(tableName,self.__con,self.showSql,self.cache,self.log,self.__connectionDb,self.__cacheTimeout,self.__cachePrefix)
+        return Table(tableName,self.__con,self.showSql,self.cache,self.log,self.__connectionDb,self.__cacheTimeout,self.__cachePrefix,self.__charset)
     """
     @param timeout int缓存过期时间
     """
@@ -168,7 +168,7 @@ class Table():
     @param cacheTimeout 数据缓存时间
     @param cachePrefix 缓存key前缀
     """
-    def __init__(self,tableName,con,showSql,cache,log,connectionDb,cacheTimeout=3600*24,cachePrefix="lightWeight_"):
+    def __init__(self,tableName,con,showSql,cache,log,connectionDb,cacheTimeout=3600*24,cachePrefix="lightWeight_",charset="UTF-8"):
         self.__tableName=tableName+" "
         self.__con=con
         self.__cache=cache
@@ -179,6 +179,7 @@ class Table():
         self.__connectionDb=connectionDb
         self.__cacheTimeout=cacheTimeout
         self.__cachePrefix=cachePrefix
+        self.__charset=charset
         self.__again()
     def __del__(self):
         if(self.__cursor!=None):
@@ -245,10 +246,12 @@ class Table():
             return True
     def __dealField(self,data,sign):
         "处理字段，防止sql注入"
-        if(type(data)!=str):
+        if(data==None):
+            return 'None'
+        if(type(data)!=str and type(data).__name__!="unicode"):
             data=str(data)
         data=re.sub(r'\'','\\\'',data)
-        if(sign):
+        if(sign and data != None):
             data="'"+data+"'"
         return data
     def __createSelectSql(self):
@@ -341,7 +344,7 @@ class Table():
         try:
             self.__con.ping()
         except Exception,e:
-            self.log.log(u"发现数据库连接断开！",0)
+            self.__log.log(u"发现数据库连接断开！",0)
             if(self.__connectionDb()==False):
                 self.__errorMessage=str(e)
                 return None
@@ -359,6 +362,7 @@ class Table():
                     index=0
                     for t in self.__columns:
                         obj[t]=str(temp[index])
+                        obj[t]=obj[t].decode(self.__charset)
                         index=index+1
                     result.append(obj)
             elif(type==1):
@@ -526,8 +530,9 @@ class Table():
             if(re.search(r'^[\s]*-',temp)):
                 self.__orderByText=self.__orderByText+temp.replace("-","")+" DESC"
             else:
-                self.__orderByText=self.__orderByText+" ASC"
+                self.__orderByText=self.__orderByText+temp+" ASC"
             index=index+1
+        self.__orderByText=" ORDER BY "+self.__orderByText
         return self
     """
     select查询
